@@ -1,0 +1,116 @@
+{
+	"info": {
+		"_postman_id": "faceauth-api-collection-id",
+		"name": "FaceAuth API",
+		"description": "Postman Collection for testing the CPU-only Face Authentication System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8089/api/face/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8089",
+					"path": [
+						"api",
+						"face",
+						"health"
+					]
+				},
+				"description": "Checks if the FaceAuth application is running and the models are successfully loaded."
+			},
+			"response": []
+		},
+		{
+			"name": "Enroll User (1-4 Images)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "identifier",
+							"value": "EMP101",
+							"description": "Unique identifier for the user (e.g. Employee ID or username)",
+							"type": "text"
+						},
+						{
+							"key": "name",
+							"value": "John Doe",
+							"description": "Display name of the user",
+							"type": "text"
+						},
+						{
+							"key": "files",
+							"description": "1 to 4 face images for enrollment. Select file type and upload images.",
+							"type": "file",
+							"src": []
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8089/api/face/enroll",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8089",
+					"path": [
+						"api",
+						"face",
+						"enroll"
+					]
+				},
+				"description": "Enrolls a new user in the database. Processes the face images, extracts embeddings, validates quality, and stores the face features."
+			},
+			"response": []
+		},
+		{
+			"name": "Recognize Face",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"description": "The face image to be recognized/matched.",
+							"type": "file",
+							"src": []
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8089/api/face/recognize",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8089",
+					"path": [
+						"api",
+						"face",
+						"recognize"
+					]
+				},
+				"description": "Takes an input face image, detects the face, extracts the embedding, matches it against all registered users' embeddings in the database using Cosine Similarity, and returns the match result."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8089"
+		}
+	]
+}

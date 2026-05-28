@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FaceAuth Developer Dashboard</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.3);
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.2);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.2);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--success));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(to right, #ffffff, var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px 14px;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            transition: var(--transition);
+        }
+
+        .status-dot.online {
+            background-color: var(--success);
+            box-shadow: 0 0 8px var(--success);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.offline {
+            background-color: var(--danger);
+            box-shadow: 0 0 8px var(--danger);
+        }
+
+        main {
+            flex: 1;
+            max-width: 1300px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 40px 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            box-shadow: 0 10px 30px -15px rgba(0, 0, 0, 0.3);
+            transition: var(--transition);
+        }
+
+        .panel:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.4);
+        }
+
+        .panel-header {
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"] {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 15px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        /* Drag & Drop Area */
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 30px 20px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.2);
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            min-height: 180px;
+            position: relative;
+        }
+
+        .dropzone:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.03);
+        }
+
+        .dropzone-icon {
+            font-size: 32px;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+
+        .dropzone:hover .dropzone-icon {
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .dropzone p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .dropzone span {
+            font-size: 12px;
+            color: rgba(148, 163, 184, 0.6);
+        }
+
+        .file-input {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Image Preview */
+        .preview-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .preview-card {
+            width: 80px;
+            height: 80px;
+            border-radius: var(--radius-md);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .preview-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            color: #ffffff;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-remove:hover {
+            background: var(--danger);
+        }
+
+        /* Buttons */
+        button.btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
+            border: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            padding: 14px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px -4px var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button.btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px -2px var(--primary-glow);
+            filter: brightness(1.1);
+        }
+
+        button.btn-primary:active {
+            transform: translateY(1px);
+        }
+
+        button.btn-primary:disabled {
+            background: var(--border-color);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        /* Live Console & Logs */
+        .console-panel {
+            grid-column: 1 / -1;
+            background: rgba(10, 15, 30, 0.9);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 12px;
+        }
+
+        .console-title {
+            font-family: monospace;
+            font-size: 14px;
+            color: var(--primary);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .console-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .console-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: var(--transition);
+        }
+
+        .console-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .console-output {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            max-height: 250px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #38bdf8;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.02);
+            padding-bottom: 8px;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            margin-right: 8px;
+        }
+
+        .log-type {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .log-type.success { color: var(--success); }
+        .log-type.error { color: var(--danger); }
+        .log-type.info { color: var(--primary); }
+
+        .log-body {
+            color: #e2e8f0;
+            white-space: pre-wrap;
+        }
+
+        /* Match Result HUD */
+        .hud-card {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            display: none;
+        }
+
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hud-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .hud-value {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .match-badge {
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .match-badge.matched {
+            background-color: var(--success-glow);
+            color: var(--success);
+            border: 1px solid var(--success);
+            box-shadow: 0 0 10px var(--success-glow);
+        }
+
+        .match-badge.nomatch {
+            background-color: var(--danger-glow);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            box-shadow: 0 0 10px var(--danger-glow);
+        }
+
+        /* Similarity Progress Bar */
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, var(--primary), var(--success));
+            border-radius: 10px;
+            transition: width 0.8s cubic-bezier(0.1, 0.8, 0.2, 1);
+        }
+
+        /* Animations */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-section">
+            <div class="logo-icon">FA</div>
+            <div>
+                <h1>FaceAuth Control Panel</h1>
+            </div>
+        </div>
+        <div class="status-badge">
+            <span class="status-dot" id="health-dot"></span>
+            <span id="health-text">Checking System Status...</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Enrollment Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">👤 Face Enrollment</div>
+                <div class="panel-subtitle">Register a new employee with a single high-quality photo</div>
+            </div>
+
+            <div class="form-group">
+                <label for="enroll-id">Employee ID / Identifier</label>
+                <input type="text" id="enroll-id" placeholder="e.g. EMP101" required>
+            </div>
+
+            <div class="form-group">
+                <label for="enroll-name">Display Name</label>
+                <input type="text" id="enroll-name" placeholder="e.g. John Doe" required>
+            </div>
+
+            <div class="form-group">
+                <label>Face Image</label>
+                <div class="dropzone" id="enroll-dropzone">
+                    <span class="dropzone-icon">📸</span>
+                    <p>Click to upload face image</p>
+                    <span>JPEG, PNG accepted</span>
+                    <input type="file" id="enroll-file" class="file-input" accept="image/jpeg,image/png">
+                </div>
+                <div class="preview-container" id="enroll-previews"></div>
+            </div>
+
+            <button class="btn-primary" id="btn-enroll" disabled>
+                <div class="spinner" id="enroll-spinner"></div>
+                <span>Register Employee</span>
+            </button>
+        </div>
+
+        <!-- Recognition/Verification Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">🔍 Face Recognition / Match</div>
+                <div class="panel-subtitle">Upload a face photo to authenticate the employee</div>
+            </div>
+
+            <div class="form-group">
+                <label>Query Face Image</label>
+                <div class="dropzone" id="recognize-dropzone">
+                    <span class="dropzone-icon">🎯</span>
+                    <p>Click to select target face</p>
+                    <span>Capture or upload image</span>
+                    <input type="file" id="recognize-file" class="file-input" accept="image/jpeg,image/png">
+                </div>
+                <div class="preview-container" id="recognize-previews"></div>
+            </div>
+
+            <button class="btn-primary" id="btn-recognize" disabled>
+                <div class="spinner" id="recognize-spinner"></div>
+                <span>Authenticate Face</span>
+            </button>
+
+            <!-- Match Result Display -->
+            <div class="hud-card" id="match-hud">
+                <div class="hud-row">
+                    <span class="hud-label">Authentication Status</span>
+                    <span class="match-badge" id="hud-match-badge">NO MATCH</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">Employee ID</span>
+                    <span class="hud-value" id="hud-employee-id">-</span>
+                </div>
+                <div class="hud-row">
+                    <span class="hud-label">Employee Name</span>
+                    <span class="hud-value" id="hud-employee-name">-</span>
+                </div>
+                <div class="form-group">
+                    <div class="hud-row">
+                        <span class="hud-label">Confidence Score (Similarity)</span>
+                        <span class="hud-value" id="hud-similarity-text">0%</span>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="hud-progress"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detect & Crop Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">✂️ Face Detect & Crop</div>
+                <div class="panel-subtitle">Test the face detector and view the cropped 112x112 image</div>
+            </div>
+
+            <div class="form-group">
+                <label>Raw Face Image</label>
+                <div class="dropzone" id="crop-dropzone">
+                    <span class="dropzone-icon">🖼️</span>
+                    <p>Click to select image for cropping</p>
+                    <span>JPEG, PNG accepted</span>
+                    <input type="file" id="crop-file" class="file-input" accept="image/jpeg,image/png">
+                </div>
+                <div class="preview-container" id="crop-previews"></div>
+            </div>
+
+            <button class="btn-primary" id="btn-crop" disabled>
+                <div class="spinner" id="crop-spinner"></div>
+                <span>Detect & Crop Face</span>
+            </button>
+            
+            <div class="hud-card" id="crop-hud" style="display: none; align-items: center; padding: 20px;">
+                <span class="hud-label" style="margin-bottom: 10px;">Cropped Result (112x112)</span>
+                <img id="crop-result-img" style="border-radius: 8px; border: 1px solid var(--border-color); width: 112px; height: 112px;" />
+            </div>
+        </div>
+
+        <!-- Live Console Logs -->
+        <div class="console-panel">
+            <div class="console-header">
+                <div class="console-title">⌨ Console Logs & API Responses</div>
+                <div class="console-actions">
+                    <button class="console-btn" onclick="clearConsole()">Clear Logs</button>
+                </div>
+            </div>
+            <div class="console-output" id="console-logs"></div>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE = 'http://localhost:8089/api/face';
+        
+        let enrollImageFile = null;
+        let recognizeImageFile = null;
+        let cropImageFile = null;
+
+        // On Load initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            checkHealth();
+            // Poll health every 5 seconds
+            setInterval(checkHealth, 5000);
+
+            setupDragAndDrop();
+        });
+
+        // Logger Function
+        function log(message, type = 'info') {
+            const container = document.getElementById('console-logs');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'log-time';
+            timeSpan.textContent = new Date().toLocaleTimeString();
+
+            const typeSpan = document.createElement('span');
+            typeSpan.className = `log-type ${type}`;
+            typeSpan.textContent = `[${type.toUpperCase()}]`;
+
+            const bodySpan = document.createElement('span');
+            bodySpan.className = 'log-body';
+            bodySpan.textContent = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
+
+            entry.appendChild(timeSpan);
+            entry.appendChild(typeSpan);
+            entry.appendChild(bodySpan);
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearConsole() {
+            document.getElementById('console-logs').innerHTML = '';
+            log('Console logs cleared.');
+        }
+
+        // Check Health
+        async function checkHealth() {
+            const dot = document.getElementById('health-dot');
+            const text = document.getElementById('health-text');
+
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                if (response.ok) {
+                    const msg = await response.text();
+                    dot.className = 'status-dot online';
+                    text.textContent = `Backend Online (${msg})`;
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                dot.className = 'status-dot offline';
+                text.textContent = 'Backend Offline (Check server status)';
+            }
+        }
+
+        // Setup Drag & Drop preview listeners
+        function setupDragAndDrop() {
+            // Enroll Files
+            const enrollFileInput = document.getElementById('enroll-file');
+            enrollFileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    enrollImageFile = e.target.files[0];
+                    showPreview(enrollImageFile, 'enroll-previews', () => {
+                        enrollImageFile = null;
+                        document.getElementById('btn-enroll').disabled = true;
+                    });
+                    checkEnrollFormValidity();
+                }
+            });
+
+            // Match Files
+            const recognizeFileInput = document.getElementById('recognize-file');
+            recognizeFileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    recognizeImageFile = e.target.files[0];
+                    showPreview(recognizeImageFile, 'recognize-previews', () => {
+                        recognizeImageFile = null;
+                        document.getElementById('btn-recognize').disabled = true;
+                        document.getElementById('match-hud').style.display = 'none';
+                    });
+                    document.getElementById('btn-recognize').disabled = false;
+                }
+            });
+
+            // Text Inputs validation
+            document.getElementById('enroll-id').addEventListener('input', checkEnrollFormValidity);
+            document.getElementById('enroll-name').addEventListener('input', checkEnrollFormValidity);
+
+            // Enroll Submit button listener
+            document.getElementById('btn-enroll').addEventListener('click', enrollUser);
+            document.getElementById('btn-recognize').addEventListener('click', authenticateFace);
+
+            // Crop Files
+            const cropFileInput = document.getElementById('crop-file');
+            cropFileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    cropImageFile = e.target.files[0];
+                    showPreview(cropImageFile, 'crop-previews', () => {
+                        cropImageFile = null;
+                        document.getElementById('btn-crop').disabled = true;
+                        document.getElementById('crop-hud').style.display = 'none';
+                    });
+                    document.getElementById('btn-crop').disabled = false;
+                }
+            });
+
+            document.getElementById('btn-crop').addEventListener('click', detectAndCrop);
+        }
+
+        function checkEnrollFormValidity() {
+            const id = document.getElementById('enroll-id').value.trim();
+            const name = document.getElementById('enroll-name').value.trim();
+            const btn = document.getElementById('btn-enroll');
+            
+            btn.disabled = !(id && name && enrollImageFile);
+        }
+
+        // Generate dynamic previews
+        function showPreview(file, containerId, onRemove) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // reset preview
+
+            const card = document.createElement('div');
+            card.className = 'preview-card';
+
+            const img = document.createElement('img');
+            img.src = URL.createObjectURL(file);
+            card.appendChild(img);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'preview-remove';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.addEventListener('click', () => {
+                container.innerHTML = '';
+                onRemove();
+            });
+            card.appendChild(removeBtn);
+
+            container.appendChild(card);
+        }
+
+        // Enroll User API call
+        async function enrollUser() {
+            const idInput = document.getElementById('enroll-id');
+            const nameInput = document.getElementById('enroll-name');
+            const enrollBtn = document.getElementById('btn-enroll');
+            const spinner = document.getElementById('enroll-spinner');
+
+            const id = idInput.value.trim();
+            const name = nameInput.value.trim();
+
+            if (!enrollImageFile) {
+                alert('Please upload an image first');
+                return;
+            }
+
+            enrollBtn.disabled = true;
+            spinner.style.display = 'block';
+            log(`Enrolling face for user: "${name}" (${id})...`, 'info');
+
+            const formData = new FormData();
+            formData.append('image', enrollImageFile);
+            formData.append('name', name);
+            formData.append('identifier', id);
+
+            try {
+                const response = await fetch(`${API_BASE}/enroll`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(data, 'success');
+                    log(`Successfully enrolled user "${name}" with ID: ${id}. Detected face confidence: ${(data.confidence * 100).toFixed(1)}%`, 'success');
+                    
+                    // Reset enroll fields
+                    idInput.value = '';
+                    nameInput.value = '';
+                    document.getElementById('enroll-previews').innerHTML = '';
+                    enrollImageFile = null;
+                } else {
+                    log(data, 'error');
+                    alert(`Enrollment Failed: ${data.message || 'Check logs'}`);
+                }
+            } catch (err) {
+                log(err.message || err, 'error');
+                alert('Network error connecting to Backend service.');
+            } finally {
+                enrollBtn.disabled = false;
+                spinner.style.display = 'none';
+                checkEnrollFormValidity();
+            }
+        }
+
+        // Recognize Face API call
+        async function authenticateFace() {
+            const recBtn = document.getElementById('btn-recognize');
+            const spinner = document.getElementById('recognize-spinner');
+            const hud = document.getElementById('match-hud');
+
+            if (!recognizeImageFile) {
+                alert('Please upload a face image to recognize');
+                return;
+            }
+
+            recBtn.disabled = true;
+            spinner.style.display = 'block';
+            hud.style.display = 'none';
+            log('Sending authentication request to face recognition pipeline...', 'info');
+
+            const formData = new FormData();
+            formData.append('image', recognizeImageFile);
+
+            try {
+                const response = await fetch(`${API_BASE}/recognize`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                log(data, response.ok ? 'success' : 'error');
+
+                if (response.ok) {
+                    hud.style.display = 'flex';
+                    
+                    const badge = document.getElementById('hud-match-badge');
+                    const empId = document.getElementById('hud-employee-id');
+                    const empName = document.getElementById('hud-employee-name');
+                    const simText = document.getElementById('hud-similarity-text');
+                    const progress = document.getElementById('hud-progress');
+
+                    const isMatch = data.matched;
+                    const simPercent = Math.max(0, Math.min(100, Math.round(data.similarity * 100)));
+
+                    badge.className = isMatch ? 'match-badge matched' : 'match-badge nomatch';
+                    badge.textContent = isMatch ? 'MATCHED' : 'NO MATCH';
+
+                    empId.textContent = isMatch ? data.userId : '-';
+                    empName.textContent = isMatch ? data.userName : '-';
+                    simText.textContent = `${simPercent}% (Threshold: ${Math.round(data.threshold * 100)}%)`;
+                    progress.style.width = `${simPercent}%`;
+
+                    if (isMatch) {
+                        log(`MATCH DETECTED: Welcome, ${data.userName}!`, 'success');
+                    } else {
+                        log('AUTHENTICATION FAILED: Face similarity is below security threshold.', 'error');
+                    }
+                } else {
+                    alert(`Recognition Failed: ${data.message || 'Check logs'}`);
+                }
+            } catch (err) {
+                log(err.message || err, 'error');
+                alert('Network error connecting to Backend service.');
+            } finally {
+                recBtn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+
+        // Detect & Crop API call
+        async function detectAndCrop() {
+            const cropBtn = document.getElementById('btn-crop');
+            const spinner = document.getElementById('crop-spinner');
+            const hud = document.getElementById('crop-hud');
+
+            if (!cropImageFile) {
+                alert('Please upload an image to crop');
+                return;
+            }
+
+            cropBtn.disabled = true;
+            spinner.style.display = 'block';
+            hud.style.display = 'none';
+            log('Sending crop request...', 'info');
+
+            const formData = new FormData();
+            formData.append('image', cropImageFile);
+
+            try {
+                const response = await fetch(`${API_BASE}/detect-crop`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imgUrl = URL.createObjectURL(blob);
+                    document.getElementById('crop-result-img').src = imgUrl;
+                    hud.style.display = 'flex';
+                    log('Face successfully detected and cropped.', 'success');
+                } else {
+                    log('Detect-crop API returned error.', 'error');
+                    alert(`Crop Failed. Check console logs.`);
+                }
+            } catch (err) {
+                log(err.message || err, 'error');
+                alert('Network error connecting to Backend service.');
+            } finally {
+                cropBtn.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

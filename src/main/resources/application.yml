@@ -1,0 +1,72 @@
+server:
+  port: 8089
+
+spring:
+  application:
+    name: FaceAuth
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  datasource:
+    url: jdbc:postgresql://localhost:5432/faceauth
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+# Face Authentication Configuration
+faceauth:
+  # ONNX model paths (relative to project root)
+  models:
+    # Detection model: det_2.5g or det_10g
+    detection-model: ${DETECTION_MODEL:det_2.5g.onnx}
+    # Embedding model: ArcFace ResNet50
+    embedding-model: ${EMBEDDING_MODEL:w600k_r50.onnx}
+    # Base directory for model files
+    base-path: ${MODELS_PATH:models}
+
+  # ONNX Runtime thread configuration
+  onnx:
+    intra-op-threads: ${ONNX_THREADS:4}
+
+  # Face detection settings
+  detection:
+    # Minimum confidence to accept a detected face
+    min-confidence: ${DETECTION_CONFIDENCE:0.5}
+    # Minimum face size in pixels (in original image)
+    min-face-size: ${MIN_FACE_SIZE:80}
+
+  # Face matching settings
+  matching:
+    # Similarity above this = accepted match
+    accept-threshold: ${MATCH_ACCEPT:0.45}
+    # Similarity below this = rejected
+    reject-threshold: ${MATCH_REJECT:0.30}
+
+  # Image validation settings
+  image:
+    min-width: 300
+    min-height: 300
+    max-width: 5000
+    max-height: 5000
+    # Allowed MIME types
+    allowed-types: image/jpeg,image/png
+
+  # Storage settings
+  storage:
+    # Base directory for storing processed face images
+    face-dir: ${FACE_STORAGE_PATH:faces}
+
+  # Enrollment settings
+  enrollment:
+    # Maximum images per user (1 minimum, 4 maximum)
+    max-images-per-user: 4

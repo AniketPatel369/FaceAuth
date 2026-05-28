@@ -1,0 +1,34 @@
+# Maven
+target/
+*.jar
+*.war
+*.zip
+*.tar.gz
+*.rar
+
+# IDEs and Editors
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Project-specific ignored folders
+models/
+faces/
+*.onnx
+
+# OS files
+Thumbs.db
+db.json
+.DS_Store
+
+# Local application logs
+*.log
+logs/
