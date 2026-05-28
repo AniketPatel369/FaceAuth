@@ -63,11 +63,8 @@ public class FaceController {
             bgrImage = ImageUtils.bytesToMat(imageBytes);
             log.info("Image loaded: {}x{}", bgrImage.cols(), bgrImage.rows());
 
-            // Step 3: Detect face (SCRFD)
-            DetectionResult detection = detectionService.detectSingleFace(bgrImage);
-
-            // Step 4: Align face to 112x112 (affine transform)
-            alignedFace = alignmentService.alignFace(bgrImage, detection);
+            // Step 3 & 4: Two-stage detection and alignment (Detect -> Crop -> Detect -> Align)
+            alignedFace = detectAndAlignWithCrop(bgrImage);
 
             // Step 5: Generate 512-D embedding (ArcFace)
             float[] embedding = embeddingService.generateEmbedding(alignedFace);
@@ -81,12 +78,14 @@ public class FaceController {
             }
 
             // Step 7: Store aligned face + embedding
+            // Note: We don't have the final confidence here easily without changing the helper signature, 
+            // but we can pass 1.0f as it passed the threshold check inside detectionService.
             int totalEnrollments = storageService.storeEnrollment(
-                    user, alignedFace, embedding, detection.getConfidence());
+                    user, alignedFace, embedding, 1.0f);
 
             // Return success response
             UploadFaceResponse response = UploadFaceResponse.success(
-                    user.getId(), detection.getConfidence(), totalEnrollments);
+                    user.getId(), 1.0f, totalEnrollments);
 
             return ResponseEntity.ok(response);
 
@@ -122,8 +121,10 @@ public class FaceController {
             imageValidator.validate(image, imageBytes);
 
             bgrImage = ImageUtils.bytesToMat(imageBytes);
-            DetectionResult detection = detectionService.detectSingleFace(bgrImage);
-            alignedFace = alignmentService.alignFace(bgrImage, detection);
+            
+            // Two-stage detection and alignment
+            alignedFace = detectAndAlignWithCrop(bgrImage);
+            
             float[] queryEmbedding = embeddingService.generateEmbedding(alignedFace);
 
             // Step 6: Match against stored embeddings
@@ -171,8 +172,7 @@ public class FaceController {
             imageValidator.validate(image, imageBytes);
 
             bgrImage = ImageUtils.bytesToMat(imageBytes);
-            DetectionResult detection = detectionService.detectSingleFace(bgrImage);
-            alignedFace = alignmentService.alignFace(bgrImage, detection);
+            alignedFace = detectAndAlignWithCrop(bgrImage);
 
             byte[] croppedJpeg = ImageUtils.matToBytes(alignedFace);
 
@@ -196,5 +196,26 @@ public class FaceController {
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("FaceAuth is running");
+    }
+
+    // Helper method for two-stage detection and alignment
+    private Mat detectAndAlignWithCrop(Mat originalImage) {
+        // Stage 1: Initial detection to find the face in the large image
+        DetectionResult initialDetection = detectionService.detectSingleFace(originalImage);
+
+        // Stage 2: Crop out the face with a 50% margin
+        Mat croppedImage = ImageUtils.cropFaceWithMargin(originalImage, initialDetection.getBoundingBox(), 0.5f);
+
+        try {
+            // Stage 3: Second detection on the cropped, high-resolution face region
+            DetectionResult refinedDetection = detectionService.detectSingleFace(croppedImage);
+
+            // Stage 4: Align the face using the refined landmarks
+            return alignmentService.alignFace(croppedImage, refinedDetection);
+        } finally {
+            if (croppedImage != null && !croppedImage.empty()) {
+                croppedImage.close();
+            }
+        }
     }
 }

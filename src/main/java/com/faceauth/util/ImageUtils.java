@@ -62,4 +62,31 @@ public class ImageUtils {
         bytePointer.close();
         return bytes;
     }
+
+    // Crop face with a specified margin ratio
+    public static Mat cropFaceWithMargin(Mat image, float[] bbox, float marginRatio) {
+        int width = image.cols();
+        int height = image.rows();
+
+        float x1 = bbox[0];
+        float y1 = bbox[1];
+        float x2 = bbox[2];
+        float y2 = bbox[3];
+
+        float faceWidth = x2 - x1;
+        float faceHeight = y2 - y1;
+
+        float marginX = faceWidth * marginRatio;
+        float marginY = faceHeight * marginRatio;
+
+        int cropX1 = Math.max(0, (int) (x1 - marginX));
+        int cropY1 = Math.max(0, (int) (y1 - marginY));
+        int cropX2 = Math.min(width, (int) (x2 + marginX));
+        int cropY2 = Math.min(height, (int) (y2 + marginY));
+
+        org.bytedeco.opencv.opencv_core.Rect roi = new org.bytedeco.opencv.opencv_core.Rect(
+                cropX1, cropY1, cropX2 - cropX1, cropY2 - cropY1);
+
+        return new Mat(image, roi).clone(); // Clone to ensure independent lifecycle
+    }
 }
