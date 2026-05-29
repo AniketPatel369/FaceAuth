@@ -8,13 +8,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 // Aligns a detected face to the ArcFace standard template (112x112)
-// Uses 5-point landmarks from SCRFD to compute affine transform
+// Uses 5-point Umeyama similarity transform for optimal alignment
 @Service
 public class FaceAlignmentService {
 
     private static final Logger log = LoggerFactory.getLogger(FaceAlignmentService.class);
 
-    // Align face using landmarks from detection result
+    // Align face using 5-point landmarks from detection result (Umeyama algorithm)
     // Returns a 112x112 BGR image with face in standard position
     public Mat alignFace(Mat originalImage, DetectionResult detection) {
         float[][] landmarks = detection.getLandmarks();
@@ -30,7 +30,7 @@ public class FaceAlignmentService {
                 landmarks[0][0], landmarks[0][1],
                 landmarks[1][0], landmarks[1][1]);
 
-        // Compute affine transform and warp face to 112x112
+        // Compute 5-point Umeyama similarity transform and warp face to 112x112
         Mat aligned = AlignmentUtils.alignFace(originalImage, landmarks);
 
         if (aligned.empty()) {

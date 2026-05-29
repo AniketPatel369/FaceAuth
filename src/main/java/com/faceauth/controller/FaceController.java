@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 // REST API for face enrollment and recognition
 @CrossOrigin
 @RestController
@@ -63,13 +65,13 @@ public class FaceController {
             bgrImage = ImageUtils.bytesToMat(imageBytes);
             log.info("Image loaded: {}x{}", bgrImage.cols(), bgrImage.rows());
 
-            // Step 3 & 4: Two-stage detection and alignment (Detect -> Crop -> Detect -> Align)
+            // Step 3: Two-stage detect and align (Umeyama 5-point)
             alignedFace = detectAndAlignWithCrop(bgrImage);
 
-            // Step 5: Generate 512-D embedding (ArcFace)
+            // Step 4: Generate embedding (with all active enhancements applied)
             float[] embedding = embeddingService.generateEmbedding(alignedFace);
 
-            // Step 6: Find or create user
+            // Step 5: Find or create user
             User user;
             if (userId != null) {
                 user = storageService.findUserById(userId);
@@ -77,9 +79,7 @@ public class FaceController {
                 user = storageService.findOrCreateUser(name, identifier);
             }
 
-            // Step 7: Store aligned face + embedding
-            // Note: We don't have the final confidence here easily without changing the helper signature, 
-            // but we can pass 1.0f as it passed the threshold check inside detectionService.
+            // Step 6: Store aligned face + embedding
             int totalEnrollments = storageService.storeEnrollment(
                     user, alignedFace, embedding, 1.0f);
 
@@ -116,30 +116,39 @@ public class FaceController {
         Mat alignedFace = null;
 
         try {
-            // Same pipeline as enrollment (Steps 1-5)
+            // Same pipeline as enrollment (Steps 1-4)
             byte[] imageBytes = image.getBytes();
             imageValidator.validate(image, imageBytes);
 
             bgrImage = ImageUtils.bytesToMat(imageBytes);
-            
-            // Two-stage detection and alignment
+
+            // Two-stage detect and align (Umeyama 5-point)
             alignedFace = detectAndAlignWithCrop(bgrImage);
-            
+
+            // Generate embedding (with all active enhancements applied)
             float[] queryEmbedding = embeddingService.generateEmbedding(alignedFace);
 
-            // Step 6: Match against stored embeddings
+            // Get active enhancements for the response
+            List<String> activeEnhancements = embeddingService.getActiveEnhancements();
+
+            // Match against stored embeddings
             FaceMatchingService.MatchResult result = matchingService.findBestMatch(queryEmbedding);
 
-            // Build response based on match result
+            // Build response
             float acceptThreshold = 0.45f;
 
             if (result.matched()) {
                 return ResponseEntity.ok(MatchFaceResponse.matched(
-                        result.userId(), result.userName(),
-                        result.similarity(), acceptThreshold));
+                        result.userId(),
+                        result.userName(),
+                        result.similarity(),
+                        acceptThreshold,
+                        activeEnhancements));
             } else {
                 return ResponseEntity.ok(MatchFaceResponse.noMatch(
-                        result.similarity(), acceptThreshold));
+                        result.similarity(),
+                        acceptThreshold,
+                        activeEnhancements));
             }
 
         } catch (IllegalArgumentException e) {
@@ -198,19 +207,33 @@ public class FaceController {
         return ResponseEntity.ok("FaceAuth is running");
     }
 
-    // Helper method for two-stage detection and alignment
-    private Mat detectAndAlignWithCrop(Mat originalImage) {
-        // Stage 1: Initial detection to find the face in the large image
-        DetectionResult initialDetection = detectionService.detectSingleFace(originalImage);
+    // List all enrolled users
+    @GetMapping("/users")
+    public ResponseEntity<java.util.List<User>> getAllUsers() {
+        return ResponseEntity.ok(storageService.getAllUsers());
+    }
 
-        // Stage 2: Crop out the face with a 50% margin
+    // Delete a user
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        try {
+            storageService.deleteUser(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Failed to delete user", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // Two-stage face detection and alignment
+    // Stage 1: Detect face in original image, crop with margin
+    // Stage 2: Re-detect in high-res crop for precise landmarks, then align with Umeyama
+    private Mat detectAndAlignWithCrop(Mat originalImage) {
+        DetectionResult initialDetection = detectionService.detectSingleFace(originalImage);
         Mat croppedImage = ImageUtils.cropFaceWithMargin(originalImage, initialDetection.getBoundingBox(), 0.5f);
 
         try {
-            // Stage 3: Second detection on the cropped, high-resolution face region
             DetectionResult refinedDetection = detectionService.detectSingleFace(croppedImage);
-
-            // Stage 4: Align the face using the refined landmarks
             return alignmentService.alignFace(croppedImage, refinedDetection);
         } finally {
             if (croppedImage != null && !croppedImage.empty()) {

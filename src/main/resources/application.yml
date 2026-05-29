@@ -70,3 +70,13 @@ faceauth:
   enrollment:
     # Maximum images per user (1 minimum, 4 maximum)
     max-images-per-user: 4
+
+  # Enhancement feature flags — toggle ON/OFF to test impact on scores
+  # WARNING: Changing embedding-affecting flags requires re-enrollment!
+  enhancements:
+    # Flip-Ensemble: average original + horizontally flipped face embeddings
+    flip-ensemble: ${FLIP_ENSEMBLE:true}
+    # CLAHE: Contrast enhancement on luminance channel before embedding
+    clahe: ${CLAHE_ENABLED:true}
+    # Pixel normalization divisor (127.5 = legacy, 128.0 = InsightFace standard)
+    normalization-divisor: ${NORM_DIVISOR:128.0}

@@ -80,6 +80,23 @@ public class FaceStorageService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
     }
 
+    // Get all enrolled users
+    public java.util.List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    // Delete a user and their embeddings
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteUser(Long userId) {
+        // Delete associated embeddings first to avoid foreign key violations
+        embeddingRepository.deleteByUserId(userId);
+        
+        // Delete the user record
+        userRepository.deleteById(userId);
+        
+        log.info("Deleted user and all associated embeddings for userId={}", userId);
+    }
+
     // Save the aligned face image to: faces/user_{id}/aligned_{n}.png
     private String saveAlignedFace(Long userId, Mat alignedFace, int imageNumber) {
         String baseDir = properties.getStorage().getFaceDir();

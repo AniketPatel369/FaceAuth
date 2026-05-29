@@ -3,6 +3,8 @@ package com.faceauth.dto;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 // Response DTO returned after a face matching/recognition attempt
 @Getter
 @Builder
@@ -25,11 +27,15 @@ public class MatchFaceResponse {
     // Threshold used for accept decision
     private float threshold;
 
+    // List of active enhancement flags used during this match
+    private List<String> activeEnhancements;
+
     // Error message if matching failed
     private String error;
 
     // Factory method for a successful match
-    public static MatchFaceResponse matched(Long userId, String userName, float similarity, float threshold) {
+    public static MatchFaceResponse matched(Long userId, String userName, float similarity,
+                                             float threshold, List<String> activeEnhancements) {
         return MatchFaceResponse.builder()
                 .success(true)
                 .matched(true)
@@ -37,16 +43,19 @@ public class MatchFaceResponse {
                 .userName(userName)
                 .similarity(similarity)
                 .threshold(threshold)
+                .activeEnhancements(activeEnhancements)
                 .build();
     }
 
     // Factory method for no match found
-    public static MatchFaceResponse noMatch(float bestSimilarity, float threshold) {
+    public static MatchFaceResponse noMatch(float bestSimilarity, float threshold,
+                                             List<String> activeEnhancements) {
         return MatchFaceResponse.builder()
                 .success(true)
                 .matched(false)
                 .similarity(bestSimilarity)
                 .threshold(threshold)
+                .activeEnhancements(activeEnhancements)
                 .build();
     }
 

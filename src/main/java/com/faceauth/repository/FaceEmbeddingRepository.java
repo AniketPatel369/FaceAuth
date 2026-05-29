@@ -18,4 +18,7 @@ public interface FaceEmbeddingRepository extends JpaRepository<FaceEmbedding, Lo
     // Get all embeddings in the system (for matching loop)
     // For small scale (<10k users), loading all is fine
     List<FaceEmbedding> findAll();
+
+    // Delete all embeddings for a user
+    void deleteByUserId(Long userId);
 }

@@ -25,57 +25,52 @@ public class AlignmentUtils {
     // Aligned face output size (ArcFace standard)
     public static final int ALIGNED_SIZE = 112;
 
-    // Compute similarity transform and warp face to 112x112 aligned output
+    // 5-Point Least Squares Similarity Transform (Umeyama Algorithm)
+    // Uses all 5 landmarks for optimal alignment to ArcFace template.
     // srcLandmarks: 5 detected landmark points from SCRFD [x,y] pairs
     // originalImage: the full original image (BGR)
     public static Mat alignFace(Mat originalImage, float[][] srcLandmarks) {
-        // Use the two eye points for a simpler, robust affine transform
-        // This avoids numerical instability from using all 5 points
-        float[] leftEye = srcLandmarks[0];
-        float[] rightEye = srcLandmarks[1];
-        float[] refLeftEye = ARCFACE_REFERENCE_POINTS[0];
-        float[] refRightEye = ARCFACE_REFERENCE_POINTS[1];
+        int n = 5;
+        double meanXSrc = 0, meanYSrc = 0, meanXDst = 0, meanYDst = 0;
+        for (int i = 0; i < n; i++) {
+            meanXSrc += srcLandmarks[i][0];
+            meanYSrc += srcLandmarks[i][1];
+            meanXDst += ARCFACE_REFERENCE_POINTS[i][0];
+            meanYDst += ARCFACE_REFERENCE_POINTS[i][1];
+        }
+        meanXSrc /= n; meanYSrc /= n; meanXDst /= n; meanYDst /= n;
 
-        // Compute angle between eyes
-        double srcAngle = Math.atan2(rightEye[1] - leftEye[1], rightEye[0] - leftEye[0]);
-        double dstAngle = Math.atan2(refRightEye[1] - refLeftEye[1], refRightEye[0] - refLeftEye[0]);
-        double angle = Math.toDegrees(srcAngle - dstAngle);
+        double A = 0, B = 0, varSrc = 0;
+        for (int i = 0; i < n; i++) {
+            double dxSrc = srcLandmarks[i][0] - meanXSrc;
+            double dySrc = srcLandmarks[i][1] - meanYSrc;
+            double dxDst = ARCFACE_REFERENCE_POINTS[i][0] - meanXDst;
+            double dyDst = ARCFACE_REFERENCE_POINTS[i][1] - meanYDst;
 
-        // Compute scale from eye distance ratio
-        double srcDist = Math.sqrt(
-                Math.pow(rightEye[0] - leftEye[0], 2) +
-                Math.pow(rightEye[1] - leftEye[1], 2));
-        double dstDist = Math.sqrt(
-                Math.pow(refRightEye[0] - refLeftEye[0], 2) +
-                Math.pow(refRightEye[1] - refLeftEye[1], 2));
-        double scale = dstDist / srcDist;
+            A += dxSrc * dxDst + dySrc * dyDst;
+            B += dxSrc * dyDst - dySrc * dxDst;
+            varSrc += dxSrc * dxSrc + dySrc * dySrc;
+        }
 
-        // Center point between eyes in source image
-        float centerX = (leftEye[0] + rightEye[0]) / 2f;
-        float centerY = (leftEye[1] + rightEye[1]) / 2f;
+        double a = A / varSrc;
+        double b = B / varSrc;
 
-        // Get rotation matrix around eye center
-        Point2f center = new Point2f(centerX, centerY);
-        Mat rotMatrix = getRotationMatrix2D(center, angle, scale);
+        double tx = meanXDst - (a * meanXSrc - b * meanYSrc);
+        double ty = meanYDst - (b * meanXSrc + a * meanYSrc);
 
-        // Adjust translation to move eyes to reference position
-        double refCenterX = (refLeftEye[0] + refRightEye[0]) / 2.0;
-        double refCenterY = (refLeftEye[1] + refRightEye[1]) / 2.0;
+        Mat rotMatrix = new Mat(2, 3, org.bytedeco.opencv.global.opencv_core.CV_64F);
+        rotMatrix.ptr(0, 0).putDouble(a);
+        rotMatrix.ptr(0, 1).putDouble(-b);
+        rotMatrix.ptr(0, 2).putDouble(tx);
+        rotMatrix.ptr(1, 0).putDouble(b);
+        rotMatrix.ptr(1, 1).putDouble(a);
+        rotMatrix.ptr(1, 2).putDouble(ty);
 
-        // Adjust the translation component of the matrix
-        double tx = rotMatrix.ptr(0, 2).getDouble();
-        double ty = rotMatrix.ptr(1, 2).getDouble();
-        rotMatrix.ptr(0, 2).putDouble(tx + refCenterX - centerX);
-        rotMatrix.ptr(1, 2).putDouble(ty + refCenterY - centerY);
-
-        // Warp the original image
         Mat aligned = new Mat();
-        warpAffine(originalImage, aligned, rotMatrix,
-                new Size(ALIGNED_SIZE, ALIGNED_SIZE));
+        warpAffine(originalImage, aligned, rotMatrix, new Size(ALIGNED_SIZE, ALIGNED_SIZE));
 
         rotMatrix.close();
-        center.close();
-
         return aligned;
     }
 }
+

@@ -89,4 +89,42 @@ public class ImageUtils {
 
         return new Mat(image, roi).clone(); // Clone to ensure independent lifecycle
     }
+
+    // Apply CLAHE (Contrast Limited Adaptive Histogram Equalization) to luminance channel only
+    // Converts BGR → LAB, applies CLAHE to L channel, converts back to BGR
+    // This standardizes lighting without distorting colors
+    public static Mat applyCLAHE(Mat bgrImage) {
+        // Convert BGR to LAB color space
+        Mat labImage = new Mat();
+        cvtColor(bgrImage, labImage, COLOR_BGR2Lab);
+
+        // Split LAB channels
+        org.bytedeco.opencv.opencv_core.MatVector channels = new org.bytedeco.opencv.opencv_core.MatVector();
+        org.bytedeco.opencv.global.opencv_core.split(labImage, channels);
+
+        // Apply CLAHE to the L (luminance) channel only
+        org.bytedeco.opencv.opencv_imgproc.CLAHE clahe =
+                opencv_imgproc.createCLAHE(2.0, new Size(8, 8));
+        Mat enhancedL = new Mat();
+        clahe.apply(channels.get(0), enhancedL);
+
+        // Replace L channel with enhanced version
+        channels.put(0, enhancedL);
+
+        // Merge channels back
+        Mat enhancedLab = new Mat();
+        org.bytedeco.opencv.global.opencv_core.merge(channels, enhancedLab);
+
+        // Convert LAB back to BGR
+        Mat result = new Mat();
+        cvtColor(enhancedLab, result, COLOR_Lab2BGR);
+
+        // Cleanup intermediate Mats
+        labImage.close();
+        enhancedL.close();
+        enhancedLab.close();
+        channels.close();
+
+        return result;
+    }
 }

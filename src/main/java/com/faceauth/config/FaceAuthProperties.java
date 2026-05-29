@@ -19,6 +19,7 @@ public class FaceAuthProperties {
     private Image image = new Image();
     private Storage storage = new Storage();
     private Enrollment enrollment = new Enrollment();
+    private Enhancements enhancements = new Enhancements();
 
     // ONNX model file paths
     @Getter @Setter
@@ -68,5 +69,19 @@ public class FaceAuthProperties {
     @Getter @Setter
     public static class Enrollment {
         private int maxImagesPerUser = 4;
+    }
+
+    // Enhancement feature flags — toggle individual improvements
+    // WARNING: Changing embedding-affecting flags requires re-enrollment!
+    @Getter @Setter
+    public static class Enhancements {
+        // Flip-Ensemble: average original + mirrored face embedding (was V3)
+        private boolean flipEnsemble = true;
+
+        // CLAHE: Apply contrast enhancement on luminance channel before embedding
+        private boolean clahe = false;
+
+        // Pixel normalization divisor (127.5 = legacy, 128.0 = InsightFace standard)
+        private float normalizationDivisor = 127.5f;
     }
 }

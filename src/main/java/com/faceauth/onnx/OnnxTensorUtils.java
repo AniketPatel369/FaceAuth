@@ -14,8 +14,9 @@ public class OnnxTensorUtils {
 
     // Convert BGR Mat to NCHW float tensor with normalization
     // Output shape: [1, 3, height, width]
-    // Normalization: (pixel - 127.5) / 127.5 → range [-1, 1]
-    public static OnnxTensor matToTensor(OrtEnvironment env, Mat mat, int height, int width)
+    // Normalization: (pixel - 127.5) / normalizationDivisor → range [-1, 1]
+    public static OnnxTensor matToTensor(OrtEnvironment env, Mat mat, int height, int width,
+                                          float normalizationDivisor)
             throws OrtException {
 
         int channels = mat.channels();
@@ -26,17 +27,17 @@ public class OnnxTensorUtils {
         mat.data().get(pixels);
 
         // Convert to NCHW format with normalization
-        // OpenCV Mat is in HWC (height, width, channels) BGR order
+        // OpenCV Mat is in HWC (height, width, channels) order
         for (int h = 0; h < height; h++) {
             for (int w = 0; w < width; w++) {
                 int pixelIndex = (h * width + w) * channels;
 
-                // BGR → channels 0,1,2 in NCHW layout
+                // Channels in NCHW layout
                 for (int c = 0; c < channels; c++) {
                     int nchwIndex = c * height * width + h * width + w;
-                    // Convert unsigned byte to float, then normalize to [-1, 1]
+                    // Convert unsigned byte to float, then normalize
                     float pixelValue = (pixels[pixelIndex + c] & 0xFF);
-                    data[nchwIndex] = (pixelValue - 127.5f) / 127.5f;
+                    data[nchwIndex] = (pixelValue - 127.5f) / normalizationDivisor;
                 }
             }
         }
