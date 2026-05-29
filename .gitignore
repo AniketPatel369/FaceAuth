@@ -32,3 +32,10 @@ db.json
 # Local application logs
 *.log
 logs/
+
+# Custom dev scripts and docs
+test_client.html
+restart.bat
+FaceAuth_Postman_Collection.json
+cpu_only_face_authentication_system_step_1_complete_architecture.md
+changes.md
