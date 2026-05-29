@@ -54,8 +54,8 @@ faceauth:
 
   # Image validation settings
   image:
-    min-width: 300
-    min-height: 300
+    min-width: 200
+    min-height: 200
     max-width: 5000
     max-height: 5000
     # Allowed MIME types

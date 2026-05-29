@@ -39,3 +39,6 @@ restart.bat
 FaceAuth_Postman_Collection.json
 cpu_only_face_authentication_system_step_1_complete_architecture.md
 changes.md
+faces_dataset/*
+faces_dataset/enroll/*
+faces_dataset/test/*
